@@ -75,7 +75,7 @@ func main() {
 			err = handleRecord(metricBlock, regBlock.FindStringSubmatch(line))
 
 		case regQuery.MatchString(line):
-			err = handleRecord(metricQuery, regBlock.FindStringSubmatch(line))
+			err = handleRecord(metricQuery, regQuery.FindStringSubmatch(line))
 
 		default:
 			continue
