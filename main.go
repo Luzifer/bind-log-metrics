@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"regexp"
 
@@ -62,7 +63,18 @@ func main() {
 		log.WithError(err).Fatal("Unable to create metrics client")
 	}
 
-	scanner := bufio.NewScanner(os.Stdin)
+	var input io.Reader = os.Stdin
+	if len(rconfig.Args()) > 1 {
+		f, err := os.Open(rconfig.Args()[1])
+		if err != nil {
+			log.WithError(err).Fatal("Unable to open input file")
+		}
+		defer f.Close()
+
+		input = f
+	}
+
+	scanner := bufio.NewScanner(input)
 	for scanner.Scan() {
 		var line = scanner.Text()
 
