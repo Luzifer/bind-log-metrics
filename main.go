@@ -21,10 +21,10 @@ const (
 
 var (
 	cfg = struct {
-		InfluxDBName   string `description:"Database name of the InfluxDB" validate:"nonzero"`
-		InfluxHost     string `description:"Hostname of the InfluxDB" validate:"nonzero"`
-		InfluxPass     string `description:"Password of the InfluxDB" validate:"nonzero"`
-		InfluxUser     string `description:"Username of the InfluxDB" validate:"nonzero"`
+		InfluxDBName   string `flag:"influx-db-name" description:"Database name of the InfluxDB" validate:"nonzero"`
+		InfluxHost     string `flag:"influx-host" description:"Hostname of the InfluxDB" validate:"nonzero"`
+		InfluxPass     string `flag:"influx-pass" description:"Password of the InfluxDB" validate:"nonzero"`
+		InfluxUser     string `flag:"influx-user" description:"Username of the InfluxDB" validate:"nonzero"`
 		LogLevel       string `flag:"log-level" default:"info" description:"Log level (debug, info, warn, error, fatal)"`
 		VersionAndExit bool   `flag:"version" default:"false" description:"Prints current version and exits"`
 	}{}
