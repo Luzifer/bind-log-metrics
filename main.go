@@ -63,6 +63,12 @@ func main() {
 		log.WithError(err).Fatal("Unable to create metrics client")
 	}
 
+	go func() {
+		for err := range metrics.Errors() {
+			log.WithError(err).Error("Metrics processing caused an error")
+		}
+	}()
+
 	var input io.Reader = os.Stdin
 	if len(rconfig.Args()) > 1 {
 		f, err := os.Open(rconfig.Args()[1])
