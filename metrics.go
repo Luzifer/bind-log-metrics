@@ -10,7 +10,7 @@ import (
 
 const (
 	influxWriteInterval = 10 * time.Second
-	influxChunkSize     = 10000
+	influxChunkSize     = 1000
 )
 
 type metricsSender struct {
