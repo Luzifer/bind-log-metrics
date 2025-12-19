@@ -7,8 +7,7 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 
 	"github.com/Luzifer/rconfig/v2"
 )
@@ -38,10 +37,26 @@ var (
 	version = "dev"
 )
 
-func init() {
+func initApp() error {
 	rconfig.AutoEnv(true)
 	if err := rconfig.ParseAndValidate(&cfg); err != nil {
-		log.Fatalf("Unable to parse commandline options: %s", err)
+		return fmt.Errorf("parsing CLI options: %w", err)
+	}
+
+	l, err := logrus.ParseLevel(cfg.LogLevel)
+	if err != nil {
+		return fmt.Errorf("parsing log-level: %w", err)
+	}
+	logrus.SetLevel(l)
+
+	return nil
+}
+
+func main() {
+	var err error
+
+	if err = initApp(); err != nil {
+		logrus.WithError(err).Fatal("initializing app")
 	}
 
 	if cfg.VersionAndExit {
@@ -49,23 +64,13 @@ func init() {
 		os.Exit(0)
 	}
 
-	if l, err := log.ParseLevel(cfg.LogLevel); err != nil {
-		log.WithError(err).Fatal("Unable to parse log level")
-	} else {
-		log.SetLevel(l)
-	}
-}
-
-func main() {
-	var err error
-
 	if metrics, err = newMetricsSender(cfg.InfluxHost, cfg.InfluxUser, cfg.InfluxPass, cfg.InfluxDBName); err != nil {
-		log.WithError(err).Fatal("Unable to create metrics client")
+		logrus.WithError(err).Fatal("creating metrics client")
 	}
 
 	go func() {
 		for err := range metrics.Errors() {
-			log.WithError(err).Error("Metrics processing caused an error")
+			logrus.WithError(err).Error("metrics processing caused an error")
 		}
 	}()
 
@@ -73,7 +78,7 @@ func main() {
 	if len(rconfig.Args()) > 1 {
 		f, err := os.Open(rconfig.Args()[1])
 		if err != nil {
-			log.WithError(err).Fatal("Unable to open input file")
+			logrus.WithError(err).Fatal("opening input file")
 		}
 		defer f.Close()
 
@@ -82,7 +87,7 @@ func main() {
 
 	scanner := bufio.NewScanner(input)
 	for scanner.Scan() {
-		var line = scanner.Text()
+		line := scanner.Text()
 
 		// Re-yield the line scanned from stdin
 		fmt.Fprintln(os.Stdout, line)
@@ -101,24 +106,25 @@ func main() {
 		}
 
 		if err != nil {
-			log.WithError(err).Error("Unable to process line")
+			logrus.WithError(err).Error("processing line")
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		log.WithError(err).Fatal("Scanner caused an error")
+		logrus.WithError(err).Fatal("Scanner caused an error")
 	}
 }
 
-func handleRecord(m metric, groups []string) error {
-	return errors.Wrap(
-		metrics.RecordPoint(string(m), map[string]string{
-			"client": groups[1],
-			"domain": groups[2],
-			"type":   groups[3],
-		}, map[string]interface{}{
-			"count": 1,
-		}),
-		"Unable to add metrics point",
-	)
+func handleRecord(m metric, groups []string) (err error) {
+	if err = metrics.RecordPoint(string(m), map[string]string{
+		"client": groups[1],
+		"domain": groups[2],
+		"type":   groups[3],
+	}, map[string]any{
+		"count": 1,
+	}); err != nil {
+		return fmt.Errorf("adding metrics point: %w", err)
+	}
+
+	return nil
 }

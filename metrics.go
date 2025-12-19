@@ -1,11 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
 	influx "github.com/influxdata/influxdb1-client/v2"
-	"github.com/pkg/errors"
 )
 
 const (
@@ -80,7 +80,7 @@ func (m *metricsSender) sendLoop() {
 			Database: cfg.InfluxDBName,
 		})
 		if err != nil {
-			m.errs <- errors.Wrap(err, "creating batchpoints")
+			m.errs <- fmt.Errorf("creating batchpoints: %w", err)
 			continue
 		}
 
@@ -89,7 +89,7 @@ func (m *metricsSender) sendLoop() {
 				Database: cfg.InfluxDBName,
 			})
 			if err != nil {
-				m.errs <- errors.Wrap(err, "creating batchpoints")
+				m.errs <- fmt.Errorf("creating batchpoints: %w", err)
 				continue
 			}
 
