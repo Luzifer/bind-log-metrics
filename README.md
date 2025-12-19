@@ -1,8 +1,6 @@
-[![Go Report Card](https://goreportcard.com/badge/github.com/Luzifer/bind-log-metrics)](https://goreportcard.com/report/github.com/Luzifer/bind-log-metrics)
-![](https://badges.fyi/github/license/Luzifer/bind-log-metrics)
-![](https://badges.fyi/github/downloads/Luzifer/bind-log-metrics)
-![](https://badges.fyi/github/latest-release/Luzifer/bind-log-metrics)
-![](https://knut.in/project-status/bind-log-metrics)
+![](https://img.shields.io/github/license/Luzifer/bind-log-metrics)
+![](https://img.shields.io/github/downloads/Luzifer/bind-log-metrics/total)
+![](https://img.shields.io/github/v/release/Luzifer/bind-log-metrics)
 
 # Luzifer / bind-log-metrics
 
