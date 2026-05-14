@@ -1,6 +1,6 @@
 module github.com/Luzifer/bind-log-metrics
 
-go 1.24.0
+go 1.26.0
 
 require (
 	github.com/Luzifer/rconfig/v2 v2.6.1

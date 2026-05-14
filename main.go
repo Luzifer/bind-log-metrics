@@ -1,3 +1,4 @@
+// Bind9 log-metrics extractor
 package main
 
 import (
@@ -7,24 +8,23 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/Luzifer/rconfig/v2"
+	"github.com/sirupsen/logrus"
 )
-
-type metric string
 
 const (
 	metricQuery metric = "dns_query"
 	metricBlock metric = "dns_block"
 )
 
+type metric string
+
 var (
 	cfg = struct {
-		InfluxDBName   string `flag:"influx-db-name" description:"Database name of the InfluxDB" validate:"nonzero"`
-		InfluxHost     string `flag:"influx-host" description:"Hostname of the InfluxDB" validate:"nonzero"`
-		InfluxPass     string `flag:"influx-pass" description:"Password of the InfluxDB" validate:"nonzero"`
-		InfluxUser     string `flag:"influx-user" description:"Username of the InfluxDB" validate:"nonzero"`
+		InfluxDBName   string `flag:"influx-db-name" description:"Database name of the InfluxDB" validate:"nonzero"` //revive:disable-line:struct-tag // nonzero is valid for this validator
+		InfluxHost     string `flag:"influx-host" description:"Hostname of the InfluxDB" validate:"nonzero"`         //revive:disable-line:struct-tag // nonzero is valid for this validator
+		InfluxPass     string `flag:"influx-pass" description:"Password of the InfluxDB" validate:"nonzero"`         //revive:disable-line:struct-tag // nonzero is valid for this validator
+		InfluxUser     string `flag:"influx-user" description:"Username of the InfluxDB" validate:"nonzero"`         //revive:disable-line:struct-tag // nonzero is valid for this validator
 		LogLevel       string `flag:"log-level" default:"info" description:"Log level (debug, info, warn, error, fatal)"`
 		VersionAndExit bool   `flag:"version" default:"false" description:"Prints current version and exits"`
 	}{}
@@ -60,7 +60,7 @@ func main() {
 	}
 
 	if cfg.VersionAndExit {
-		fmt.Printf("bind-log-metrics %s\n", version)
+		fmt.Printf("bind-log-metrics %s\n", version) //nolint:forbidigo // version to stdout is fine
 		os.Exit(0)
 	}
 
@@ -80,7 +80,7 @@ func main() {
 		if err != nil {
 			logrus.WithError(err).Fatal("opening input file")
 		}
-		defer f.Close()
+		defer f.Close() //nolint:errcheck // will be closed by process exit then
 
 		input = f
 	}
@@ -90,10 +90,9 @@ func main() {
 		line := scanner.Text()
 
 		// Re-yield the line scanned from stdin
-		fmt.Fprintln(os.Stdout, line)
+		_, _ = fmt.Fprintln(os.Stdout, line)
 
 		switch {
-
 		case regBlock.MatchString(line):
 			err = handleRecord(metricBlock, regBlock.FindStringSubmatch(line))
 
@@ -102,7 +101,6 @@ func main() {
 
 		default:
 			continue
-
 		}
 
 		if err != nil {

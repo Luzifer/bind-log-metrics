@@ -34,10 +34,10 @@ func (m *metricsSender) Errors() <-chan error {
 	return m.errs
 }
 
-func (m *metricsSender) RecordPoint(name string, tags map[string]string, fields map[string]interface{}) error {
+func (m *metricsSender) RecordPoint(name string, tags map[string]string, fields map[string]any) error {
 	pt, err := influx.NewPoint(name, tags, fields, time.Now())
 	if err != nil {
-		return err
+		return fmt.Errorf("creating point: %w", err)
 	}
 
 	m.batchLock.Lock()
@@ -47,7 +47,7 @@ func (m *metricsSender) RecordPoint(name string, tags map[string]string, fields 
 	return nil
 }
 
-func (m *metricsSender) filterExpiredPoints(pts []*influx.Point) []*influx.Point {
+func (*metricsSender) filterExpiredPoints(pts []*influx.Point) []*influx.Point {
 	var out []*influx.Point
 
 	for _, pt := range pts {
@@ -59,12 +59,32 @@ func (m *metricsSender) filterExpiredPoints(pts []*influx.Point) []*influx.Point
 	return out
 }
 
+func (m *metricsSender) initialize(host, user, pass string) error {
+	influxClient, err := influx.NewHTTPClient(influx.HTTPConfig{
+		Addr:     host,
+		Username: user,
+		Password: pass,
+		Timeout:  2 * time.Second,
+	})
+	if err != nil {
+		return fmt.Errorf("creating HTTP client: %w", err)
+	}
+
+	m.client = influxClient
+	if err := m.resetBatch(); err != nil {
+		return err
+	}
+	go m.sendLoop()
+
+	return nil
+}
+
 func (m *metricsSender) resetBatch() error {
 	b, err := influx.NewBatchPoints(influx.BatchPointsConfig{
 		Database: m.database,
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("creating new batch: %w", err)
 	}
 
 	m.batch = b
@@ -73,7 +93,6 @@ func (m *metricsSender) resetBatch() error {
 
 func (m *metricsSender) sendLoop() {
 	for range time.Tick(influxWriteInterval) {
-
 		m.batchLock.Lock()
 
 		failedBatch, err := influx.NewBatchPoints(influx.BatchPointsConfig{
@@ -81,6 +100,7 @@ func (m *metricsSender) sendLoop() {
 		})
 		if err != nil {
 			m.errs <- fmt.Errorf("creating batchpoints: %w", err)
+			m.batchLock.Unlock()
 			continue
 		}
 
@@ -93,10 +113,7 @@ func (m *metricsSender) sendLoop() {
 				continue
 			}
 
-			end := i + influxChunkSize
-			if end > len(m.batch.Points()) {
-				end = len(m.batch.Points())
-			}
+			end := min(i+influxChunkSize, len(m.batch.Points()))
 
 			chunk.AddPoints(m.batch.Points()[i:end])
 
@@ -110,24 +127,4 @@ func (m *metricsSender) sendLoop() {
 		m.batch = failedBatch
 		m.batchLock.Unlock()
 	}
-}
-
-func (m *metricsSender) initialize(host, user, pass string) error {
-	influxClient, err := influx.NewHTTPClient(influx.HTTPConfig{
-		Addr:     host,
-		Username: user,
-		Password: pass,
-		Timeout:  2 * time.Second,
-	})
-	if err != nil {
-		return err
-	}
-
-	m.client = influxClient
-	if err := m.resetBatch(); err != nil {
-		return err
-	}
-	go m.sendLoop()
-
-	return nil
 }
