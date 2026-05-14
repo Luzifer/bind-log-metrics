@@ -3,7 +3,7 @@ module github.com/Luzifer/bind-log-metrics
 go 1.26.0
 
 require (
-	github.com/Luzifer/rconfig/v2 v2.6.1
+	github.com/Luzifer/rconfig/v2 v2.6.2
 	github.com/influxdata/influxdb1-client v0.0.0-20220302092344-a9ab5670611c
 	github.com/sirupsen/logrus v1.9.4
 )
